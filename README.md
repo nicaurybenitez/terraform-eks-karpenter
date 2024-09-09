@@ -1,6 +1,6 @@
 # terraform-eks-karpenter
 
-Step-by-step guide to set and use AWS EKS with Karpenter by Terraform
+Step-by-step guide to set and use AWS EKS with Karpenter by Terraform.
 
 ## Steps
 
@@ -29,7 +29,10 @@ accordingly. Check the plan and initiate apply to create the VPC.
 ```
 terraform init
 terraform plan
-terraform apply
+
+terraform apply -target="module.vpc" -auto-approve
+terraform apply -target="module.eks" -auto-approve
+terraform apply --auto-approve
 ```
 
 Check the AWS console for the newly created VPC
@@ -46,14 +49,17 @@ terraform destroy
 | **Task ID** | **Details**                                             | **Status**         | **Comment(s)**             |
 |-------------|---------------------------------------------------------|--------------------|----------------------------|
 | Task-1      | Create VPC for EKS cluster                              | :white_check_mark: |                            |
-| Task-2      | Create EKS Cluster with addons                          | :x:                |                            |
-| Task-3      | Integrate Karpenter for node scaling                    | :x:                |                            |
-| Task-4      | Deploy Stateless application                            | :x:                |                            |
-| Task-5      | ALB Ingress for access from the internet                | :x:                |                            |
-| Task-6      | Prometheus Grafana integration for monitoring           | :x:                |                            |
-| Task-7      | ConfigMap and Secrets                                   | :x:                |                            |
-| Task-8      | ConfigMap and Secrets                                   | :x:                | [with AWS parameter store] |
-| Task-9      | Deploy DaemonSet                                        | :x:                |                            |
-| Task-10     | Deploy Stateful Application                             | :x:                |                            |
-| Task-11     | Create Admin and Developer accounts for granular access | :x:                |                            |
-| Task-12     | To be amended in the future                             | :x:                |                            |
+| Task-2      | Create EKS Cluster with Karpenter for node scaling      | :x:                |                            |
+| Task-3      | Deploy Stateless application                            | :x:                |                            |
+| Task-4      | ALB Ingress for access from the internet                | :x:                |                            |
+| Task-5      | Prometheus Grafana integration for monitoring           | :x:                |                            |
+| Task-6      | ConfigMap and Secrets                                   | :x:                |                            |
+| Task-7      | ConfigMap and Secrets                                   | :x:                | [with AWS parameter store] |
+| Task-8      | Deploy DaemonSet                                        | :x:                |                            |
+| Task-9      | Deploy Stateful Application                             | :x:                |                            |
+| Task-10     | Create Admin and Developer accounts for granular access | :x:                |                            |
+| Task-11     | To be amended in the future                             | :x:                |                            |
+
+
+## References
+- [karpenter-blueprints](https://github.com/aws-samples/karpenter-blueprints/tree/main)

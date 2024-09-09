@@ -2,14 +2,14 @@
 # VPC
 #---------------------------------------------------------------
 provider "aws" {
-  region = var.region
+  region = var.deploy_region
 }
 
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "5.13.0"
 
-  name = var.name
+  name = var.project_name
   cidr = var.vpc_cidr
 
   azs             = local.azs
@@ -24,21 +24,21 @@ module "vpc" {
 
   # Manage so we can name
   manage_default_network_acl    = true
-  default_network_acl_tags      = { Name = "${var.name}-default" }
+  default_network_acl_tags      = { Name = "${var.project_name}-default" }
   manage_default_route_table    = true
-  default_route_table_tags      = { Name = "${var.name}-default" }
+  default_route_table_tags      = { Name = "${var.project_name}-default" }
   manage_default_security_group = true
-  default_security_group_tags   = { Name = "${var.name}-default" }
+  default_security_group_tags   = { Name = "${var.project_name}-default" }
 
   public_subnet_tags = {
-    "kubernetes.io/cluster/${var.name}" = "shared"
+    "kubernetes.io/cluster/${var.project_name}" = "shared"
     "kubernetes.io/role/elb"            = 1
   }
 
   private_subnet_tags = {
-    "kubernetes.io/cluster/${var.name}" = "shared"
+    "kubernetes.io/cluster/${var.project_name}" = "shared"
     "kubernetes.io/role/internal-elb"   = 1
-    "karpenter.sh/discovery"            = var.name
+    "karpenter.sh/discovery"            = var.project_name
   }
 
   tags = local.tags

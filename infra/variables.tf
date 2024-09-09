@@ -1,15 +1,26 @@
-variable "name" {
-  description = "Project name"
+variable "project_name" {
+  description = "Project name that the EKS cluster will use"
   type        = string
   default     = "eks-cluster"
 }
+variable "eks_cluster_version" {
+  description = "Kubernetes `<major>.<minor>` version to use for the EKS cluster (i.e.: `1.27`)"
+  type        = string
+  default     = 1.30
+}
+variable "node_group_name" {
+  description = "Kubernetes node group name"
+  type        = string
+  default     = "managed-ondemand"
+}
 variable "vpc_cidr" {
-  description = "CIDR for the custom VPC"
+  description = "CIDR for the VPC that the EKS cluster will use"
   type        = string
   default     = "10.0.0.0/16"
 }
-variable "region" {
-  description = "Region to deploy the resources"
+
+variable "deploy_region" {
+  description = "The AWS region to deploy into (e.g. us-east-1)"
   type        = string
-  default     = "us-east-1"
+  default     = "us-east-2"
 }

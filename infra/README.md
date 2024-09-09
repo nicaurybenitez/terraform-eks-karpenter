@@ -1,0 +1,17 @@
+# Terraform execution order
+
+```
+.
+├── README.md
+├── versions.tf
+├── data.tf
+├── local.tf
+├── variables.tf
+├── vpc.tf
+└── outputs.tf 
+```
+
+For easy of use, we are using the local state file here. In production, you 
+must use remote state such as `AWS S3` to store the `.state` files and 
+`AWS DynamoDB` for lock files.
+
