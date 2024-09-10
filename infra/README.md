@@ -8,6 +8,7 @@
 ├── local.tf
 ├── variables.tf
 ├── vpc.tf
+├── eks.tf
 └── outputs.tf 
 ```
 

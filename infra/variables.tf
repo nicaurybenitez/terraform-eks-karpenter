@@ -6,7 +6,7 @@ variable "project_name" {
 variable "eks_cluster_version" {
   description = "Kubernetes `<major>.<minor>` version to use for the EKS cluster (i.e.: `1.27`)"
   type        = string
-  default     = 1.30
+  default     = "1.30"
 }
 variable "node_group_name" {
   description = "Kubernetes node group name"

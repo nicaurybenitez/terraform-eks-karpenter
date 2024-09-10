@@ -33,9 +33,9 @@ provider "kubectl" {
   token                  = data.aws_eks_cluster_auth.this.token
 }
 
-################################################################################
-# Cluster
-################################################################################
+###############################################################################
+# EKS Cluster
+###############################################################################
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = "20.24.0"
@@ -70,7 +70,7 @@ module "eks" {
   enable_cluster_creator_admin_permissions = true
 
   eks_managed_node_groups = {
-    mg_5 = {
+    managed_nodes = {
       node_group_name = var.node_group_name
       instance_types  = ["t3.medium", "t3a.medium"]
 
@@ -82,8 +82,7 @@ module "eks" {
       min_size     = 1
 
       # Launch template configuration
-      create_launch_template = true              # false will use the default launch template
-      launch_template_os     = "amazonlinux2eks" # amazonlinux2eks or bottlerocket
+      create_launch_template = true # false will use the default launch template
 
       labels = {
         intent = "control-apps"
@@ -94,6 +93,10 @@ module "eks" {
   tags = merge(local.tags, {
     "karpenter.sh/discovery" = var.project_name
   })
+
+  depends_on = [
+    module.vpc.vpc_id
+  ]
 }
 
 ## BELOW IS A SUBMODULE FROM terraform-aws-modules/iam/aws/
@@ -113,6 +116,10 @@ module "ebs_csi_driver_irsa" {
   }
 
   tags = local.tags
+
+  depends_on = [
+    module.eks.cluster_id
+  ]
 }
 
 module "eks_blueprints_addons" {
@@ -131,7 +138,7 @@ module "eks_blueprints_addons" {
 
   eks_addons = {
     aws-ebs-csi-driver = {
-      most_recent = true
+      most_recent              = true
       service_account_role_arn = module.ebs_csi_driver_irsa.iam_role_arn
     }
   }
@@ -160,9 +167,11 @@ module "eks_blueprints_addons" {
   }
 
   tags = local.tags
+
+  depends_on = [
+    module.eks.cluster_id
+  ]
 }
-
-
 
 module "aws-auth" {
   source  = "terraform-aws-modules/eks/aws//modules/aws-auth"
@@ -176,5 +185,90 @@ module "aws-auth" {
       username = "system:node:{{EC2PrivateDNSName}}"
       groups   = ["system:bootstrappers", "system:nodes"]
     },
+  ]
+
+  depends_on = [
+    module.eks.cluster_id
+  ]
+}
+
+###############################################################################
+# Karpenter settings
+###############################################################################
+resource "kubectl_manifest" "karpenter_default_ec2_node_class" {
+  yaml_body = <<YAML
+apiVersion: karpenter.k8s.aws/v1
+kind: EC2NodeClass
+metadata:
+  name: default
+spec:
+  role: "${local.node_iam_role_name}"
+  amiSelectorTerms:
+  - alias: al2@latest
+  securityGroupSelectorTerms:
+  - tags:
+      karpenter.sh/discovery: ${var.project_name}
+  subnetSelectorTerms:
+  - tags:
+      karpenter.sh/discovery: ${var.project_name}
+  tags:
+    IntentLabel: apps
+    KarpenterNodePoolName: default
+    NodeType: default
+    intent: apps
+    karpenter.sh/discovery: ${var.project_name}
+    project: karpenter-blueprints
+YAML
+
+  depends_on = [
+    module.eks.cluster_id,
+    module.eks_blueprints_addons.karpenter,
+  ]
+}
+
+resource "kubectl_manifest" "karpenter_default_node_pool" {
+  yaml_body = <<YAML
+apiVersion: karpenter.sh/v1
+kind: NodePool
+metadata:
+  name: default
+spec:
+  template:
+    metadata:
+      labels:
+        intent: apps
+    spec:
+      requirements:
+        - key: kubernetes.io/arch
+          operator: In
+          values: ["amd64", "arm64"]
+        - key: "karpenter.k8s.aws/instance-cpu"
+          operator: In
+          values: ["2", "4"]
+        - key: karpenter.sh/capacity-type
+          operator: In
+          values: ["spot", "on-demand"]
+        - key: karpenter.k8s.aws/instance-category
+          operator: In
+          values: ["c", "t"]
+      nodeClassRef:
+        name: default
+        group: karpenter.k8s.aws
+        kind: EC2NodeClass
+      kubelet:
+        containerRuntime: containerd
+        systemReserved:
+          cpu: 100m
+          memory: 100Mi
+  disruption:
+    consolidationPolicy: WhenEmptyOrUnderutilized
+    consolidateAfter: 1m
+
+YAML
+
+  depends_on = [
+    module.eks.cluster_id,
+    module.eks_blueprints_addons.karpenter,
+    kubectl_manifest.karpenter_default_ec2_node_class,
   ]
 }
