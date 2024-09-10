@@ -57,8 +57,8 @@ $ terraform apply --auto-approve
 ```
 
 Or, if you want to create the cluster module by module to have a better
-understanding, remove `depends_on` from [eks.tf](./infra/eks.tf) file and run
-the following commands:
+understanding, remove `depends_on` from
+[eks_cluster.tf](./infra/eks_cluster.tf) file and run the following commands:
 
 ```
 $ terraform init
@@ -69,7 +69,7 @@ $ terraform apply -target="module.eks" -auto-approve
 $ terraform apply --auto-approve
 ```
 
-Check the AWS console for the newly created VPC **[VPC ID from the Terrarofm
+Check the AWS console for the newly created VPC **[VPC ID from the Terraform
 output]**
 
 ```
@@ -108,8 +108,8 @@ $ aws ec2 describe-vpcs --vpc-ids "vpc-0ae0071a560b7a269" --region=us-east-2
 }    
 ```
 
-Once complete (after waiting about 15 minutes), run the following command to
-update the kube.config file to interact with the cluster through kubectl:
+Once completed (**after waiting about 15 minutes**), run the following command
+to update the kube.config file to interact with the cluster through kubectl:
 
 ```
 $ aws eks --region $AWS_REGION update-kubeconfig --name $CLUSTER_NAME
@@ -121,10 +121,9 @@ Then, check the EKS cluster, i.e.
 $ eksctl get cluster --name=eks-cluster --region=us-east-2
 NAME            VERSION STATUS  CREATED                 VPC                     SUBNETS                                                                         SECURITYGROUPS  PROVIDER
 eks-cluster     1.30    ACTIVE  2024-09-10T14:19:44Z    vpc-0ae0071a560b7a269   subnet-022e5f6ce1670fe14,subnet-02e1475b6290fcba6,subnet-0c62df535bc954c1f                      EKS
-
 ```
 
-You need to make sure you can interact with the cluster and that the Karpenter
+You need to make sure you can interact with the cluster and that the `Karpenter`
 pods are running, i.e.:
 
 ```
@@ -132,10 +131,9 @@ $ kubectl get pods -n karpenter
 NAME                        READY   STATUS    RESTARTS   AGE
 karpenter-c5447bdf5-7kp6j   1/1     Running   0          19m
 karpenter-c5447bdf5-qc7lf   1/1     Running   0          19m
-
 ```
 
-List the nodes available after creating the cluster
+List the nodes available after creating the cluster.
 
 ```
 $ kubectl get nodes          
@@ -156,7 +154,7 @@ nginx-deployment-576c6b7b6-7nnd7   1/1     Running   0          22s
 nginx-deployment-576c6b7b6-b4f8p   1/1     Running   0          22s
 ```
 
-There are `3` pods running, as mentioned in the 'YAML' file.
+There are `3` pods running, as mentioned in the `YAML` file.
 
 Change it to `30` in the [nginx-deployment.yml](./EKS/nginx-deployment.yml)
 file, and apply again.
@@ -229,6 +227,21 @@ m":{"name":"default-wgbwq"},"namespace":"","name":"default-wgbwq","reconcileID":
 
 ```
 
+Now, let's deploy [echoserver_full.yaml](./EKS/echoserver_full.yaml) and access
+it via the DNS we get from the AWS ALB. BTW, it will be an `Application Load
+Balancer`, as we have an `Ingress` between the `ALB` and the `Service`.
+
+```
+$ kubectl apply -f echoserver_full.yaml 
+namespace/echoserver created
+deployment.apps/echoserver created
+service/echoserver created
+ingress.networking.k8s.io/echoserver created
+$ kubectl get ing -n echoserver echoserver
+NAME         CLASS   HOSTS   ADDRESS                                                                   PORTS   AGE
+echoserver   alb     *       k8s-echoserv-echoserv-0c6afc926b-2140404222.us-east-2.elb.amazonaws.com   80      75m
+```
+
 **Always delete the AWS resources to save money after you are done.**
 
 ```
@@ -246,7 +259,7 @@ $ terraform destroy --auto-approve
 | Task-1      | Create VPC for EKS cluster                              | :white_check_mark: |                |
 | Task-2      | Create EKS Cluster with Karpenter for node scaling      | :white_check_mark: |                |
 | Task-3      | Deploy Stateless application                            | :white_check_mark: |                |
-| Task-4      | ALB Ingress for access from the internet                | :x:                |                |
+| Task-4      | ALB Ingress for access from the internet                | :white_check_mark: |                |
 | Task-5      | Prometheus Grafana integration for monitoring           | :x:                |                |
 | Task-6      | ConfigMap and Secrets                                   | :x:                |                |
 | Task-7      | ConfigMap and Secrets [with AWS parameter store]        | :x:                |                |
@@ -260,3 +273,5 @@ $ terraform destroy --auto-approve
 - [terraform-aws-eks-blueprints](https://aws-ia.github.io/terraform-aws-eks-blueprints/getting-started/)
 - [Karpenter getting started](https://karpenter.sh/docs/getting-started/getting-started-with-karpenter/)
 - [karpenter-blueprints](https://github.com/aws-samples/karpenter-blueprints/tree/main)
+- [terraform-aws-eks-blueprints-addons](https://github.com/aws-ia/terraform-aws-eks-blueprints-addons/blob/main/docs/addons/aws-load-balancer-controller.md)
+- [aws-load-balancer-controller](https://github.com/kubernetes-sigs/aws-load-balancer-controller/blob/main/helm/aws-load-balancer-controller/values.yaml)

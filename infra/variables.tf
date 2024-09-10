@@ -24,3 +24,9 @@ variable "deploy_region" {
   type        = string
   default     = "us-east-2"
 }
+
+variable "aws_alb_controller_name" {
+  description = "AWS ALB controller name"
+  type        = string
+  default     = "aws-load-balancer-controller"
+}

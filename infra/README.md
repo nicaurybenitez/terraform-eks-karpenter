@@ -2,13 +2,12 @@
 
 ```
 .
-├── README.md
 ├── versions.tf
 ├── data.tf
 ├── local.tf
 ├── variables.tf
 ├── vpc.tf
-├── eks.tf
+├── eks_cluster.tf
 └── outputs.tf 
 ```
 

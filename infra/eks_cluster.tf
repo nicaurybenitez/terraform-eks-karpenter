@@ -69,6 +69,17 @@ module "eks" {
   authentication_mode                      = "API_AND_CONFIG_MAP"
   enable_cluster_creator_admin_permissions = true
 
+  node_security_group_additional_rules = {
+    ingress_allow_access_from_control_plane = {
+      type                          = "ingress"
+      protocol                      = "tcp"
+      from_port                     = 9443
+      to_port                       = 9443
+      source_cluster_security_group = true
+      description                   = "Allow access from control plane to webhook port of AWS load balancer controller"
+    }
+  }
+
   eks_managed_node_groups = {
     managed_nodes = {
       node_group_name = var.node_group_name
@@ -132,9 +143,34 @@ module "eks_blueprints_addons" {
   oidc_provider_arn = module.eks.oidc_provider_arn
 
   create_delay_dependencies = [for prof in module.eks.eks_managed_node_groups : prof.node_group_arn]
-
+  # enable and configure ALB for load balancing
   enable_aws_load_balancer_controller = true
-  enable_metrics_server               = true
+  aws_load_balancer_controller = {
+    set = [
+      {
+        name  = "vpcId"
+        value = module.vpc.vpc_id
+      },
+      {
+        name  = "image.tag"
+        value = "v2.8.2"
+      },
+      {
+        name  = "serviceAccount.name"
+        value = var.aws_alb_controller_name
+      },
+      {
+        name  = "podDisruptionBudget.maxUnavailable"
+        value = 1
+      },
+      {
+        name  = "enableServiceMutatorWebhook"
+        value = "false"
+      }
+    ]
+  }
+
+  enable_metrics_server = true
 
   eks_addons = {
     aws-ebs-csi-driver = {
@@ -153,6 +189,7 @@ module "eks_blueprints_addons" {
     ]
   }
 
+  # Enable Karpenter for node autoscaling
   enable_karpenter = true
 
   karpenter = {
