@@ -30,3 +30,27 @@ variable "aws_alb_controller_name" {
   type        = string
   default     = "aws-load-balancer-controller"
 }
+variable "aws_load_balancer_controller_image_tag" {
+  description = "Desired AWS ALB Controller image tag to pull"
+  type        = string
+  default     = "v2.8.2"
+}
+variable "eks_managed_nodes_instance_types" {
+  description = "Desired instance type(s) to use as worker node(s)"
+  type        = list(string)
+  default     = ["t3.small", "t3a.small"]
+}
+variable "eks_managed_nodes_capacity_type" {
+  description = "Desired AWS ALB Controller image tag to pull"
+  type        = string
+  default     = "SPOT"
+  validation {
+    condition     = contains(["SPOT", "ON_DEMAND"], var.eks_managed_nodes_capacity_type)
+    error_message = "Valid values for eks_managed_nodes_capacity_type are (SPOT, ON_DEMAND)"
+  }
+}
+variable "karpenter_chart_version" {
+  description = "Desired Karpenter Help chart version"
+  type        = string
+  default     = "1.0.1"
+}

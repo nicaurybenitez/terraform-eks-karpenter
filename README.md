@@ -123,6 +123,10 @@ NAME            VERSION STATUS  CREATED                 VPC                     
 eks-cluster     1.30    ACTIVE  2024-09-10T14:19:44Z    vpc-0ae0071a560b7a269   subnet-022e5f6ce1670fe14,subnet-02e1475b6290fcba6,subnet-0c62df535bc954c1f                      EKS
 ```
 
+## Autoscaling
+
+### Karpenter
+
 You need to make sure you can interact with the cluster and that the `Karpenter`
 pods are running, i.e.:
 
@@ -227,19 +231,39 @@ m":{"name":"default-wgbwq"},"namespace":"","name":"default-wgbwq","reconcileID":
 
 ```
 
+### HPA (Horizontal Pod Autoscaling)
+
 Now, let's deploy [echoserver_full.yaml](./EKS/echoserver_full.yaml) and access
 it via the DNS we get from the AWS ALB. BTW, it will be an `Application Load
 Balancer`, as we have an `Ingress` between the `ALB` and the `Service`.
 
 ```
-$ kubectl apply -f echoserver_full.yaml 
+$ kubectl apply -f echoserver_full.yaml
 namespace/echoserver created
 deployment.apps/echoserver created
 service/echoserver created
+horizontalpodautoscaler.autoscaling/echoserver created
 ingress.networking.k8s.io/echoserver created
 $ kubectl get ing -n echoserver echoserver
 NAME         CLASS   HOSTS   ADDRESS                                                                   PORTS   AGE
-echoserver   alb     *       k8s-echoserv-echoserv-0c6afc926b-2140404222.us-east-2.elb.amazonaws.com   80      75m
+echoserver   alb     *       k8s-echoserv-echoserv-0c6afc926b-1788058414.us-east-2.elb.amazonaws.com   80      35s
+```
+
+You can use stress testing tools like [**oha-docker**](https://github.com/ahmadalsajid/oha-docker)
+to put some load on the application, and check the HPA in action.
+```
+$ docker run --rm -it ahmadalsajid/oha-docker  -n 50000 -c 1500 http://k8s-echoserv-echoserv-0c6afc926b-1788058414.us-east-2.elb.amazonaws.com
+```
+
+Some commands that you can use to watch what happens with the deployment, 
+autoscaling, and so on
+```
+$ kubectl get all -n echoserver
+$ kubectl get hpa echoserver -n echoserver
+$ kubectl get hpa echoserver -n echoserver --watch
+$ kubectl describe hpa echoserver -n echoserver
+$ kubectl get deployment echoserver -n echoserver
+$ kubectl edit horizontalpodautoscaler.autoscaling/echoserver -n echoserver
 ```
 
 **Always delete the AWS resources to save money after you are done.**
@@ -261,7 +285,7 @@ $ terraform destroy --auto-approve
 | Task-3      | Deploy Stateless application                            | :white_check_mark: |                |
 | Task-4      | ALB Ingress for access from the internet                | :white_check_mark: |                |
 | Task-5      | Prometheus Grafana integration for monitoring           | :x:                |                |
-| Task-6      | HPA (Horizontal Pod Autoscaling)                        | :x:                |                |
+| Task-6      | HPA (Horizontal Pod Autoscaling)                        | :white_check_mark: |                |
 | Task-7      | ConfigMap and Secrets [with AWS parameter store]        | :x:                |                |
 | Task-8      | Deploy DaemonSet                                        | :x:                |                |
 | Task-9      | Deploy Stateful Application                             | :x:                |                |
@@ -275,3 +299,5 @@ $ terraform destroy --auto-approve
 - [karpenter-blueprints](https://github.com/aws-samples/karpenter-blueprints/tree/main)
 - [terraform-aws-eks-blueprints-addons](https://github.com/aws-ia/terraform-aws-eks-blueprints-addons/blob/main/docs/addons/aws-load-balancer-controller.md)
 - [aws-load-balancer-controller](https://github.com/kubernetes-sigs/aws-load-balancer-controller/blob/main/helm/aws-load-balancer-controller/values.yaml)
+- [K8S HPA](https://medium.com/@amirhosseineidy/how-to-make-a-kubernetes-autoscaling-hpa-with-example-f2849c7bbd0b)
+- [horizontal-pod-autoscale-walkthrough](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale-walkthrough/)
