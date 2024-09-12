@@ -269,6 +269,8 @@ $ kubectl edit horizontalpodautoscaler.autoscaling/echoserver -n echoserver
 **Always delete the AWS resources to save money after you are done.**
 
 ```
+# delete deployment, service, ingress or so if deployed, i.e
+$ kubectl delete -f echoserver_full.yaml
 $ kubectl delete --all nodeclaim
 $ kubectl delete --all nodepool
 $ kubectl delete --all ec2nodeclass
