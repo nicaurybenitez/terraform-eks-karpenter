@@ -261,7 +261,7 @@ $ terraform destroy --auto-approve
 | Task-3      | Deploy Stateless application                            | :white_check_mark: |                |
 | Task-4      | ALB Ingress for access from the internet                | :white_check_mark: |                |
 | Task-5      | Prometheus Grafana integration for monitoring           | :x:                |                |
-| Task-6      | ConfigMap and Secrets                                   | :x:                |                |
+| Task-6      | HPA (Horizontal Pod Autoscaling)                        | :x:                |                |
 | Task-7      | ConfigMap and Secrets [with AWS parameter store]        | :x:                |                |
 | Task-8      | Deploy DaemonSet                                        | :x:                |                |
 | Task-9      | Deploy Stateful Application                             | :x:                |                |
