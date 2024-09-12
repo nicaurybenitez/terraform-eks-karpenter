@@ -115,7 +115,7 @@ module "ebs_csi_driver_irsa" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
   version = "5.44.0"
 
-  role_name_prefix = "${module.eks.cluster_name}-ebs-csi-driver-"
+  role_name = "ebs-csi-controller-sa"
 
   attach_ebs_csi_policy = true
 
@@ -143,6 +143,7 @@ module "eks_blueprints_addons" {
   oidc_provider_arn = module.eks.oidc_provider_arn
 
   create_delay_dependencies = [for prof in module.eks.eks_managed_node_groups : prof.node_group_arn]
+
   # enable and configure ALB for load balancing
   enable_aws_load_balancer_controller = true
   aws_load_balancer_controller = {
@@ -191,7 +192,6 @@ module "eks_blueprints_addons" {
 
   # Enable Karpenter for node autoscaling
   enable_karpenter = true
-
   karpenter = {
     chart_version       = "1.0.1"
     repository_username = data.aws_ecrpublic_authorization_token.token.user_name
@@ -201,6 +201,42 @@ module "eks_blueprints_addons" {
   karpenter_enable_instance_profile_creation = true
   karpenter_node = {
     iam_role_use_name_prefix = false
+  }
+
+#   # Enable Prometheus and Grafana, not working properly
+#   enable_kube_prometheus_stack = true
+#   kube_prometheus_stack = {
+#     name          = "monitoring"
+#     chart         = "kube-prometheus-stack"
+#     chart_version = "62.6.0"
+#     repository    = "https://prometheus-community.github.io/helm-charts"
+#     namespace     = "monitoring"
+#   }
+
+  # https://github.com/aws-ia/terraform-aws-eks-blueprints-addons/blob/main/docs/helm-release.md
+  helm_releases = {
+    prometheus-adapter = {
+      description      = "A Helm chart for k8s prometheus"
+      namespace        = "monitoring"
+      create_namespace = true
+      chart            = "kube-prometheus-stack"
+      chart_version    = "62.6.0"
+      repository       = "https://prometheus-community.github.io/helm-charts"
+    }
+#     gpu-operator = {
+#       description      = "A Helm chart for NVIDIA GPU operator"
+#       namespace        = "gpu-operator"
+#       create_namespace = true
+#       chart            = "gpu-operator"
+#       chart_version    = "v23.3.2"
+#       repository       = "https://nvidia.github.io/gpu-operator"
+#       values = [
+#         <<-EOT
+#           operator:
+#             defaultRuntime: containerd
+#         EOT
+#       ]
+#     }
   }
 
   tags = local.tags

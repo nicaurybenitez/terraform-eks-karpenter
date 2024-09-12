@@ -242,6 +242,78 @@ NAME         CLASS   HOSTS   ADDRESS                                            
 echoserver   alb     *       k8s-echoserv-echoserv-0c6afc926b-2140404222.us-east-2.elb.amazonaws.com   80      75m
 ```
 
+## Monitoring with Prometheus & Grafana 
+
+```
+$  kubectl create namespace prometheus
+namespace/prometheus created
+$ helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+"prometheus-community" already exists with the same configuration, skipping
+$ helm upgrade -i prometheus prometheus-community/prometheus \
+    --namespace prometheus \
+    --set alertmanager.persistentVolume.storageClass="gp2",server.persistentVolume.storageClass="gp2"
+
+WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /home/sajid/.kube/config
+WARNING: Kubernetes configuration file is world-readable. This is insecure. Location: /home/sajid/.kube/config
+Release "prometheus" does not exist. Installing it now.
+NAME: prometheus
+LAST DEPLOYED: Thu Sep 12 04:37:51 2024
+NAMESPACE: prometheus
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+NOTES:
+The Prometheus server can be accessed via port 80 on the following DNS name from within your cluster:
+prometheus-server.prometheus.svc.cluster.local
+
+
+Get the Prometheus server URL by running these commands in the same shell:
+  export POD_NAME=$(kubectl get pods --namespace prometheus -l "app.kubernetes.io/name=prometheus,app.kubernetes.io/instance=prometheus" -o jsonpath="{.items[0].metadata.name}")
+  kubectl --namespace prometheus port-forward $POD_NAME 9090
+
+
+The Prometheus alertmanager can be accessed via port 9093 on the following DNS name from within your cluster:
+prometheus-alertmanager.prometheus.svc.cluster.local
+
+
+Get the Alertmanager URL by running these commands in the same shell:
+  export POD_NAME=$(kubectl get pods --namespace prometheus -l "app.kubernetes.io/name=alertmanager,app.kubernetes.io/instance=prometheus" -o jsonpath="{.items[0].metadata.name}")
+  kubectl --namespace prometheus port-forward $POD_NAME 9093
+#################################################################################
+######   WARNING: Pod Security Policy has been disabled by default since    #####
+######            it deprecated after k8s 1.25+. use                        #####
+######            (index .Values "prometheus-node-exporter" "rbac"          #####
+###### .          "pspEnabled") with (index .Values                         #####
+######            "prometheus-node-exporter" "rbac" "pspAnnotations")       #####
+######            in case you still need it.                                #####
+#################################################################################
+
+
+The Prometheus PushGateway can be accessed via port 9091 on the following DNS name from within your cluster:
+prometheus-prometheus-pushgateway.prometheus.svc.cluster.local
+
+
+Get the PushGateway URL by running these commands in the same shell:
+  export POD_NAME=$(kubectl get pods --namespace prometheus -l "app=prometheus-pushgateway,component=pushgateway" -o jsonpath="{.items[0].metadata.name}")
+  kubectl --namespace prometheus port-forward $POD_NAME 9091
+
+For more information on running Prometheus, visit:
+https://prometheus.io/
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
 **Always delete the AWS resources to save money after you are done.**
 
 ```
@@ -275,3 +347,7 @@ $ terraform destroy --auto-approve
 - [karpenter-blueprints](https://github.com/aws-samples/karpenter-blueprints/tree/main)
 - [terraform-aws-eks-blueprints-addons](https://github.com/aws-ia/terraform-aws-eks-blueprints-addons/blob/main/docs/addons/aws-load-balancer-controller.md)
 - [aws-load-balancer-controller](https://github.com/kubernetes-sigs/aws-load-balancer-controller/blob/main/helm/aws-load-balancer-controller/values.yaml)
+- [terraform-aws-eks-blueprints-addon readme](https://github.com/aws-ia/terraform-aws-eks-blueprints-addon#readme)
+- [deploy-prometheus](https://archive.eksworkshop.com/intermediate/240_monitoring/deploy-prometheus/)
+- https://navyadevops.hashnode.dev/setting-up-prometheus-and-grafana-on-amazon-eks-for-kubernetes-monitoring
+- https://github.com/aws-ia/terraform-aws-eks-blueprints-addons/blob/main/main.tf
