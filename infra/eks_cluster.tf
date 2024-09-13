@@ -7,7 +7,7 @@ provider "aws" {
 }
 
 provider "aws" {
-  region = var.region
+  region = var.deploy_region
   alias  = "ohio"
 }
 

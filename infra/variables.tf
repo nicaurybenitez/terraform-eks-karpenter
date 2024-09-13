@@ -54,3 +54,23 @@ variable "karpenter_chart_version" {
   type        = string
   default     = "1.0.1"
 }
+variable "karpenter_arch_choices" {
+  description = "Allowed Karpenter node architecture choices"
+  type        = list(string)
+  default     = ["amd64", "arm64"]
+}
+variable "karpenter_instance_cpu_choices" {
+  description = "Allowed Karpenter instance cpu choices"
+  type        = list(string)
+  default     = ["2", "4", "8", "16", "32", "48", "64"]
+}
+variable "karpenter_capacity_type_choices" {
+  description = "Allowed Karpenter instance category choices"
+  type        = list(string)
+  default     = ["spot", "on-demand"]
+}
+variable "karpenter_instance_category_choices" {
+  description = "Allowed Karpenter instance categories"
+  type        = list(string)
+  default     = ["c", "t", "m", "r", "i", "d"]
+}

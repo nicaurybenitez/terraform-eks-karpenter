@@ -278,6 +278,13 @@ $ kubectl config  delete-cluster arn:aws:eks:<region>:<account_id>:cluster/<clus
 $ terraform destroy --auto-approve
 ```
 
+## Create IAM users for granting access to EKS
+
+working on [](./infra/iam.tf), once done, remove `tf` and associated files from
+[EKS](./EKS) directory. Also, update this readme
+
+
+
 ## Tasks
 
 | **Task ID** | **Details**                                             | **Status**         | **Comment(s)** |
@@ -291,7 +298,7 @@ $ terraform destroy --auto-approve
 | Task-7      | ConfigMap and Secrets [with AWS parameter store]        | :x:                |                |
 | Task-8      | Deploy DaemonSet                                        | :x:                |                |
 | Task-9      | Deploy Stateful Application                             | :x:                |                |
-| Task-10     | Create Admin and Developer accounts for granular access | :x:                |                |
+| Task-10     | Create Admin and Developer accounts for granular access | :white_check_mark: |                |
 | Task-11     | To be amended in the future                             | :x:                |                |
 
 ## References
@@ -303,3 +310,4 @@ $ terraform destroy --auto-approve
 - [aws-load-balancer-controller](https://github.com/kubernetes-sigs/aws-load-balancer-controller/blob/main/helm/aws-load-balancer-controller/values.yaml)
 - [K8S HPA](https://medium.com/@amirhosseineidy/how-to-make-a-kubernetes-autoscaling-hpa-with-example-f2849c7bbd0b)
 - [horizontal-pod-autoscale-walkthrough](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale-walkthrough/)
+- https://github.com/aws-ia/terraform-aws-eks-blueprints-teams
