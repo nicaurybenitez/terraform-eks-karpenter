@@ -8,6 +8,7 @@
 ├── variables.tf
 ├── vpc.tf
 ├── eks_cluster.tf
+├── iam.tf
 └── outputs.tf 
 ```
 

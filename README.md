@@ -233,12 +233,12 @@ m":{"name":"default-wgbwq"},"namespace":"","name":"default-wgbwq","reconcileID":
 
 ### HPA (Horizontal Pod Autoscaling)
 
-Now, let's deploy [echoserver_full.yaml](./EKS/echoserver_full.yaml) and access
+Now, let's deploy [echoserver_full.yml](./EKS/echoserver_full.yml) and access
 it via the DNS we get from the AWS ALB. BTW, it will be an `Application Load
 Balancer`, as we have an `Ingress` between the `ALB` and the `Service`.
 
 ```
-$ kubectl apply -f echoserver_full.yaml
+$ kubectl apply -f echoserver_full.yml
 namespace/echoserver created
 deployment.apps/echoserver created
 service/echoserver created
@@ -277,81 +277,83 @@ changes with terraform.
 
 ## Monitoring with Prometheus & Grafana 
 
+We will be using Prometheus and Grafana for setting up the monitoring. to do
+so, we will enable [`kube-prometheus-stack`](https://github.com/aws-ia/terraform-aws-eks-blueprints-addons/blob/main/docs/addons/kube-prometheus-stack.md)
+in our managed addons in the [eks_cluster.tf](./infra/eks_cluster.tf) file,
+something like
 ```
-$  kubectl create namespace prometheus
-namespace/prometheus created
-$ helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-"prometheus-community" already exists with the same configuration, skipping
-$ helm upgrade -i prometheus prometheus-community/prometheus \
-    --namespace prometheus \
-    --set alertmanager.persistentVolume.storageClass="gp2",server.persistentVolume.storageClass="gp2"
+enable_kube_prometheus_stack = true
+    kube_prometheus_stack = {
+      name          = "monitoring"
+      chart         = "kube-prometheus-stack"
+      chart_version = "62.6.0"
+      repository    = "https://prometheus-community.github.io/helm-charts"
+      namespace     = "monitoring"
 
-WARNING: Kubernetes configuration file is group-readable. This is insecure. Location: /home/sajid/.kube/config
-WARNING: Kubernetes configuration file is world-readable. This is insecure. Location: /home/sajid/.kube/config
-Release "prometheus" does not exist. Installing it now.
-NAME: prometheus
-LAST DEPLOYED: Thu Sep 12 04:37:51 2024
-NAMESPACE: prometheus
-STATUS: deployed
-REVISION: 1
-TEST SUITE: None
-NOTES:
-The Prometheus server can be accessed via port 80 on the following DNS name from within your cluster:
-prometheus-server.prometheus.svc.cluster.local
-
-
-Get the Prometheus server URL by running these commands in the same shell:
-  export POD_NAME=$(kubectl get pods --namespace prometheus -l "app.kubernetes.io/name=prometheus,app.kubernetes.io/instance=prometheus" -o jsonpath="{.items[0].metadata.name}")
-  kubectl --namespace prometheus port-forward $POD_NAME 9090
-
-
-The Prometheus alertmanager can be accessed via port 9093 on the following DNS name from within your cluster:
-prometheus-alertmanager.prometheus.svc.cluster.local
-
-
-Get the Alertmanager URL by running these commands in the same shell:
-  export POD_NAME=$(kubectl get pods --namespace prometheus -l "app.kubernetes.io/name=alertmanager,app.kubernetes.io/instance=prometheus" -o jsonpath="{.items[0].metadata.name}")
-  kubectl --namespace prometheus port-forward $POD_NAME 9093
-#################################################################################
-######   WARNING: Pod Security Policy has been disabled by default since    #####
-######            it deprecated after k8s 1.25+. use                        #####
-######            (index .Values "prometheus-node-exporter" "rbac"          #####
-###### .          "pspEnabled") with (index .Values                         #####
-######            "prometheus-node-exporter" "rbac" "pspAnnotations")       #####
-######            in case you still need it.                                #####
-#################################################################################
-
-
-The Prometheus PushGateway can be accessed via port 9091 on the following DNS name from within your cluster:
-prometheus-prometheus-pushgateway.prometheus.svc.cluster.local
-
-
-Get the PushGateway URL by running these commands in the same shell:
-  export POD_NAME=$(kubectl get pods --namespace prometheus -l "app=prometheus-pushgateway,component=pushgateway" -o jsonpath="{.items[0].metadata.name}")
-  kubectl --namespace prometheus port-forward $POD_NAME 9091
-
-For more information on running Prometheus, visit:
-https://prometheus.io/
+      timeout = 900
+    }
+```
+with some custom configs, i.e. the custom namespace, chart version and so on.
+Once the deployment is done, we can list everything from the namespace with
 
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
-**Always delete the AWS resources to save money after you are done.**
+$ kubectl get all -n monitoring
+```
+You can see, Grafana is running as a NodePort service, we can expose it with 
+AWS ALB to the world. [grafana.yml](./infra/grafana.yml) contains the necessary
+configurations to create the ingress. You can get the ALB URL by the command
 
 ```
-# delete deployment, service, ingress or so if deployed, i.e
-$ kubectl delete -f echoserver_full.yaml
+$ kubectl get ing -n monitoring
+```
+Also, you'll need to retrieve the Grafana admin password for the first 
+time using the `kubectl` command, i.e.
+```
+$ kubectl get secret -n monitoring monitoring-grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo 
+```
+After that, you can visit the web address provided by the ingress, use `admin`
+as the username, and hotly retrieved password to access Grafana. There, you 
+will see some prebuilt dashboards. Also, you can create your own or get by 
+ID(s) from [Grafana Labs](https://grafana.com/grafana/dashboards/?search=kubernetes)
+
+If you want to access the `Prometheus` also, use this 
+[prometheus.yml](./infra/prometheus.yml) file to create the Ingress, i.e.
+
+```
+$ kubectl apply -f prometheus.yml
+$ kubectl get ing -n monitoring
+NAME         CLASS   HOSTS   ADDRESS                                                                  PORTS   AGE
+grafana      alb     *       k8s-monitori-grafana-0d481f4284-1538150578.us-east-2.elb.amazonaws.com   80      64m
+prometheus   alb     *       k8s-monitori-promethe-f7484f4f25-423861633.us-east-2.elb.amazonaws.com   80      25m
+```
+
+## Cleanup 
+
+If you are using the `kube-prometheus-stack`, CRDs created by this chart are 
+not removed by default and should be manually cleaned up:
+
+```
+kubectl delete crd alertmanagerconfigs.monitoring.coreos.com
+kubectl delete crd alertmanagers.monitoring.coreos.com
+kubectl delete crd podmonitors.monitoring.coreos.com
+kubectl delete crd probes.monitoring.coreos.com
+kubectl delete crd prometheusagents.monitoring.coreos.com
+kubectl delete crd prometheuses.monitoring.coreos.com
+kubectl delete crd prometheusrules.monitoring.coreos.com
+kubectl delete crd scrapeconfigs.monitoring.coreos.com
+kubectl delete crd servicemonitors.monitoring.coreos.com
+kubectl delete crd thanosrulers.monitoring.coreos.com
+```
+
+Also, remove the Ingress
+```
+$ kubectl delete -f grafana.yml
+```
+
+**Always delete the AWS resources to save money after you are done.** 
+
+```
+$ kubectl delete -f echoserver_full.yml
 $ kubectl delete --all nodeclaim
 $ kubectl delete --all nodepool
 $ kubectl delete --all ec2nodeclass

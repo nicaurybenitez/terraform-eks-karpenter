@@ -196,10 +196,7 @@ module "eks_blueprints_addons" {
     chart_version       = var.karpenter_chart_version
     repository_username = data.aws_ecrpublic_authorization_token.token.user_name
     repository_password = data.aws_ecrpublic_authorization_token.token.password
-    timeouts = {
-      create = "15m"
-      delete = "15m"
-    }
+    timeout             = 600
   }
   karpenter_enable_spot_termination          = true
   karpenter_enable_instance_profile_creation = true
@@ -207,41 +204,20 @@ module "eks_blueprints_addons" {
     iam_role_use_name_prefix = false
   }
 
-#   # Enable Prometheus and Grafana, not working properly
-#   enable_kube_prometheus_stack = true
-#   kube_prometheus_stack = {
-#     name          = "monitoring"
-#     chart         = "kube-prometheus-stack"
-#     chart_version = "62.6.0"
-#     repository    = "https://prometheus-community.github.io/helm-charts"
-#     namespace     = "monitoring"
-#   }
+  # Enable Prometheus and Grafana, not working properly
+  enable_kube_prometheus_stack = true
+    kube_prometheus_stack = {
+      name          = "monitoring"
+      chart         = "kube-prometheus-stack"
+      chart_version = "62.6.0"
+      repository    = "https://prometheus-community.github.io/helm-charts"
+      namespace     = "monitoring"
 
-  # https://github.com/aws-ia/terraform-aws-eks-blueprints-addons/blob/main/docs/helm-release.md
-  helm_releases = {
-    prometheus-adapter = {
-      description      = "A Helm chart for k8s prometheus"
-      namespace        = "monitoring"
-      create_namespace = true
-      chart            = "kube-prometheus-stack"
-      chart_version    = "62.6.0"
-      repository       = "https://prometheus-community.github.io/helm-charts"
+      timeout = 900
     }
-#     gpu-operator = {
-#       description      = "A Helm chart for NVIDIA GPU operator"
-#       namespace        = "gpu-operator"
-#       create_namespace = true
-#       chart            = "gpu-operator"
-#       chart_version    = "v23.3.2"
-#       repository       = "https://nvidia.github.io/gpu-operator"
-#       values = [
-#         <<-EOT
-#           operator:
-#             defaultRuntime: containerd
-#         EOT
-#       ]
-#     }
-  }
+
+  #   # https://github.com/aws-ia/terraform-aws-eks-blueprints-addons/blob/main/docs/helm-release.md
+
 
   tags = local.tags
 
@@ -274,29 +250,10 @@ module "aws-auth" {
 # https://github.com/aws-samples/karpenter-blueprints/blob/main/cluster/terraform/karpenter.tf
 ##############################################################################################
 resource "kubectl_manifest" "karpenter_default_ec2_node_class" {
-  yaml_body = <<-YAML
-apiVersion: karpenter.k8s.aws/v1
-kind: EC2NodeClass
-metadata:
-  name: default
-spec:
-  role: "${local.node_iam_role_name}"
-  amiSelectorTerms:
-  - alias: al2@latest
-  securityGroupSelectorTerms:
-  - tags:
-      karpenter.sh/discovery: ${var.project_name}
-  subnetSelectorTerms:
-  - tags:
-      karpenter.sh/discovery: ${var.project_name}
-  tags:
-    IntentLabel: apps
-    KarpenterNodePoolName: default
-    NodeType: default
-    intent: apps
-    karpenter.sh/discovery: ${var.project_name}
-    project: karpenter-blueprints
-YAML
+  yaml_body = templatefile("${path.module}/karpenter_default_ec2_node_class.tftpl", {
+    node_iam_role_name = local.node_iam_role_name
+    project_name       = var.project_name
+  })
 
   depends_on = [
     module.eks.cluster_id,
@@ -305,48 +262,27 @@ YAML
 }
 
 resource "kubectl_manifest" "karpenter_default_node_pool" {
-  yaml_body = <<-YAML
-apiVersion: karpenter.sh/v1
-kind: NodePool
-metadata:
-  name: default
-spec:
-  template:
-    metadata:
-      labels:
-        intent: apps
-    spec:
-      requirements:
-        - key: kubernetes.io/arch
-          operator: In
-          values: ["amd64", "arm64"]
-        - key: "karpenter.k8s.aws/instance-cpu"
-          operator: In
-          values: ["2", "4"]
-        - key: karpenter.sh/capacity-type
-          operator: In
-          values: ["spot", "on-demand"]
-        - key: karpenter.k8s.aws/instance-category
-          operator: In
-          values: ["c", "t"]
-      nodeClassRef:
-        name: default
-        group: karpenter.k8s.aws
-        kind: EC2NodeClass
-      kubelet:
-        containerRuntime: containerd
-        systemReserved:
-          cpu: 100m
-          memory: 100Mi
-  disruption:
-    consolidationPolicy: WhenEmptyOrUnderutilized
-    consolidateAfter: 1m
-
-YAML
+  yaml_body = templatefile("${path.module}/karpenter_default_node_pool.tftpl", {
+    karpenter_arch_choices              = var.karpenter_arch_choices
+    karpenter_instance_cpu_choices      = var.karpenter_instance_cpu_choices
+    karpenter_capacity_type_choices     = var.karpenter_capacity_type_choices
+    karpenter_instance_category_choices = var.karpenter_instance_category_choices
+  })
 
   depends_on = [
     module.eks.cluster_id,
     module.eks_blueprints_addons.karpenter,
     kubectl_manifest.karpenter_default_ec2_node_class,
+  ]
+}
+###############################################################################
+# Expose Grafana with ALB ingress
+###############################################################################
+resource "kubectl_manifest" "set_grafana_ingrss_alb" {
+  yaml_body = templatefile("${path.module}/grafana.yml", {})
+
+  depends_on = [
+    module.eks.cluster_id,
+    module.eks_blueprints_addons.kube_prometheus_stack,
   ]
 }

@@ -62,7 +62,8 @@ variable "karpenter_arch_choices" {
 variable "karpenter_instance_cpu_choices" {
   description = "Allowed Karpenter instance cpu choices"
   type        = list(string)
-  default     = ["2", "4", "8", "16", "32", "48", "64"]
+  default     = ["2", "4"]
+  # default     = ["2", "4", "8", "16", "32", "48", "64"]
 }
 variable "karpenter_capacity_type_choices" {
   description = "Allowed Karpenter instance category choices"
@@ -72,5 +73,6 @@ variable "karpenter_capacity_type_choices" {
 variable "karpenter_instance_category_choices" {
   description = "Allowed Karpenter instance categories"
   type        = list(string)
-  default     = ["c", "t", "m", "r", "i", "d"]
+  default     = ["c", "t"]
+  # default     = ["c", "t", "m", "r", "i", "d"]
 }
