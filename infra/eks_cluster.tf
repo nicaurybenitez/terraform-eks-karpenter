@@ -180,6 +180,7 @@ module "eks_blueprints_addons" {
     }
   }
 
+  # https://github.com/aws-ia/terraform-aws-eks-blueprints-addons/blob/main/docs/addons/aws-for-fluentbit.md
   enable_aws_for_fluentbit = true
   aws_for_fluentbit = {
     set = [
@@ -206,18 +207,15 @@ module "eks_blueprints_addons" {
 
   # Enable Prometheus and Grafana, not working properly
   enable_kube_prometheus_stack = true
-    kube_prometheus_stack = {
-      name          = "monitoring"
-      chart         = "kube-prometheus-stack"
-      chart_version = "62.6.0"
-      repository    = "https://prometheus-community.github.io/helm-charts"
-      namespace     = "monitoring"
+  kube_prometheus_stack = {
+    name          = "monitoring"
+    chart         = "kube-prometheus-stack"
+    chart_version = var.kube_prometheus_stack_chart_version
+    repository    = "https://prometheus-community.github.io/helm-charts"
+    namespace     = "monitoring"
 
-      timeout = 900
-    }
-
-  #   # https://github.com/aws-ia/terraform-aws-eks-blueprints-addons/blob/main/docs/helm-release.md
-
+    timeout = 1200
+  }
 
   tags = local.tags
 
@@ -284,5 +282,6 @@ resource "kubectl_manifest" "set_grafana_ingrss_alb" {
   depends_on = [
     module.eks.cluster_id,
     module.eks_blueprints_addons.kube_prometheus_stack,
+    module.aws-auth
   ]
 }

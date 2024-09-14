@@ -49,6 +49,11 @@ variable "eks_managed_nodes_capacity_type" {
     error_message = "Valid values for eks_managed_nodes_capacity_type are (SPOT, ON_DEMAND)"
   }
 }
+variable "kube_prometheus_stack_chart_version" {
+  description = "Desired Kube Prometheus Stack Help chart version"
+  type        = string
+  default     = "62.6.0"
+}
 variable "karpenter_chart_version" {
   description = "Desired Karpenter Help chart version"
   type        = string

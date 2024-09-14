@@ -1,7 +1,9 @@
 #!/usr/bin/bash
 start=$(date +%s)
 kubectl delete -f ../EKS/echoserver_full.yml
-
+kubectl delete -f grafana.yml
+# spare 20 seconds for the above commands to remove the assets
+sleep 20
 # https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack
 kubectl delete crd alertmanagerconfigs.monitoring.coreos.com
 kubectl delete crd alertmanagers.monitoring.coreos.com
