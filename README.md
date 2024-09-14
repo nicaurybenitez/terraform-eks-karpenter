@@ -1,16 +1,39 @@
 # terraform-eks-karpenter
 
-Step-by-step guide to set and use AWS EKS with Karpenter by Terraform.
+Step-by-step guide to set and use production-ready AWS EKS with Addons, 
+managed by Terraform.
+
+## Addons
+
+* AWS Load Balancer Controller: [AWS Load Balancer Controller](https://kubernetes-sigs.github.io/aws-load-balancer-controller/) 
+  is a controller to help manage Elastic Load Balancers for a Kubernetes 
+  cluster. This Add-on deploys this controller in an Amazon EKS Cluster.
+* AWS for Fluent Bit: AWS provides a [Fluent Bit](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Container-Insights-setup-logs-FluentBit.html) 
+  image with plugins for both CloudWatch Logs and Kinesis Data Firehose. We 
+  recommend using Fluent Bit as your log router because it has a lower resource 
+  utilization rate than Fluentd.
+* Metrics Server: [Metrics Server](https://github.com/kubernetes-sigs/metrics-server) 
+  is a scalable, efficient source of container resource metrics for Kubernetes 
+  built-in autoscaling pipelines.
+* Karpenter: [Karpenter](https://karpenter.sh/) automatically provisions new 
+  nodes in response to unschedulable pods. Karpenter does this by observing 
+  events within the Kubernetes cluster, and then sending commands to the 
+  underlying cloud provider.
+* Kube Prometheus Stack: [Kube Prometheus Stack](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack) 
+  is a collection of Kubernetes manifests, Grafana dashboards, and Prometheus 
+  rules combined with documentation and scripts to provide easy to operate 
+  end-to-end Kubernetes cluster monitoring with Prometheus using the Prometheus 
+  Operator.
 
 ## Steps
 
 Install below tools before starting
 
-- [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
-- [Terraform](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli)
-- [kubectl](https://kubernetes.io/docs/tasks/tools/)
-- [eksctl](https://eksctl.io/installation/) [Use [this script](./eksctl_install.sh) to install on Ubuntu]
-- [Helm](https://helm.sh/docs/intro/install/) (the package manager for Kubernetes)
+* [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
+* [Terraform](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli)
+* [kubectl](https://kubernetes.io/docs/tasks/tools/)
+* [eksctl](https://eksctl.io/installation/) [Use [this script](./eksctl_install.sh) to install on Ubuntu]
+* [Helm](https://helm.sh/docs/intro/install/) (the package manager for Kubernetes)
 
 Configure your AWS profile with appropriate credentials with `Admin` access.
 Set the aws profile in your CLI, i.e.
@@ -128,6 +151,7 @@ eks-cluster     1.30    ACTIVE  2024-09-10T14:19:44Z    vpc-0ae0071a560b7a269   
 ### Karpenter
 
 You need to make sure you can interact with the cluster and that the `Karpenter`
+
 pods are running, i.e.:
 
 ```
@@ -179,7 +203,7 @@ ip-10-0-101-90.us-east-2.compute.internal   Ready    <none>   48m   v1.30.2-eks-
 ```
 
 We want to see `Karpenter` in action, right? To achieve that, increase the
-replica from `30` to `150`, and apply the change. Wait for a couple of minutes,
+replica from `30` to `150` , and apply the change. Wait for a couple of minutes, 
 and check for the nodes again.
 
 ```
@@ -235,7 +259,7 @@ m":{"name":"default-wgbwq"},"namespace":"","name":"default-wgbwq","reconcileID":
 
 Now, let's deploy [echoserver_full.yml](./EKS/echoserver_full.yml) and access
 it via the DNS we get from the AWS ALB. BTW, it will be an `Application Load
-Balancer`, as we have an `Ingress` between the `ALB` and the `Service`.
+Balancer `, as we have an ` Ingress ` between the ` ALB ` and the ` Service`.
 
 ```
 $ kubectl apply -f echoserver_full.yml
@@ -256,7 +280,7 @@ to put some load on the application, and check the HPA in action.
 $ docker run --rm -it ahmadalsajid/oha-docker  -n 50000 -c 1500 http://k8s-echoserv-echoserv-0c6afc926b-1788058414.us-east-2.elb.amazonaws.com
 ```
 
-Some commands that you can use to watch what happens with the deployment,
+Some commands that you can use to watch what happens with the deployment, 
 autoscaling, and so on
 
 ```
@@ -271,16 +295,17 @@ $ kubectl edit horizontalpodautoscaler.autoscaling/echoserver -n echoserver
 ## Create IAM users for granting access to EKS
 
 If you want to create IAM users and assign them administrator access or some
-development access, go to the [iam.tf](./infra/iam.tf) file, uncomment it,
+development access, go to the [iam.tf](./infra/iam.tf) file, uncomment it, 
 adjust the team users/settings according to your needs, and then apply the
 changes with terraform.
 
 ## Monitoring with Prometheus & Grafana 
 
 We will be using Prometheus and Grafana for setting up the monitoring. to do
-so, we will enable [`kube-prometheus-stack`](https://github.com/aws-ia/terraform-aws-eks-blueprints-addons/blob/main/docs/addons/kube-prometheus-stack.md)
-in our managed addons in the [eks_cluster.tf](./infra/eks_cluster.tf) file,
+so, we will enable [ `kube-prometheus-stack` ](https://github.com/aws-ia/terraform-aws-eks-blueprints-addons/blob/main/docs/addons/kube-prometheus-stack.md)
+in our managed addons in the [eks_cluster.tf](./infra/eks_cluster.tf) file, 
 something like
+
 ```
 enable_kube_prometheus_stack = true
     kube_prometheus_stack = {
@@ -293,12 +318,14 @@ enable_kube_prometheus_stack = true
       timeout = 900
     }
 ```
+
 with some custom configs, i.e. the custom namespace, chart version and so on.
 Once the deployment is done, we can list everything from the namespace with
 
 ```
 $ kubectl get all -n monitoring
 ```
+
 You can see, Grafana is running as a NodePort service, we can expose it with 
 AWS ALB to the world. [grafana.yml](./infra/grafana.yml) contains the necessary
 configurations to create the ingress. You can get the ALB URL by the command
@@ -306,12 +333,16 @@ configurations to create the ingress. You can get the ALB URL by the command
 ```
 $ kubectl get ing -n monitoring
 ```
+
 Also, you'll need to retrieve the Grafana admin password for the first 
 time using the `kubectl` command, i.e.
+
 ```
 $ kubectl get secret -n monitoring monitoring-grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo 
 ```
+
 After that, you can visit the web address provided by the ingress, use `admin`
+
 as the username, and hotly retrieved password to access Grafana. There, you 
 will see some prebuilt dashboards. Also, you can create your own or get by 
 ID(s) from [Grafana Labs](https://grafana.com/grafana/dashboards/?search=kubernetes)
@@ -329,7 +360,7 @@ prometheus   alb     *       k8s-monitori-promethe-f7484f4f25-423861633.us-east-
 
 ## Cleanup 
 
-If you are using the `kube-prometheus-stack`, CRDs created by this chart are 
+If you are using the `kube-prometheus-stack` , CRDs created by this chart are 
 not removed by default and should be manually cleaned up:
 
 ```
@@ -346,6 +377,7 @@ kubectl delete crd thanosrulers.monitoring.coreos.com
 ```
 
 Also, remove the Ingress
+
 ```
 $ kubectl delete -f grafana.yml
 ```
@@ -361,6 +393,9 @@ $ kubectl config  delete-cluster arn:aws:eks:<region>:<account_id>:cluster/<clus
 $ terraform destroy --auto-approve
 ```
 
+Alternately, you can use [tf_cleanup.sh](./infra/tf_cleanup.sh) to clean up
+the resources.
+
 ## Tasks
 
 | **Task ID** | **Details**                                             | **Status**         | **Comment(s)** |
@@ -369,7 +404,7 @@ $ terraform destroy --auto-approve
 | Task-2      | Create EKS Cluster with Karpenter for node scaling      | :white_check_mark: |                |
 | Task-3      | Deploy Stateless application                            | :white_check_mark: |                |
 | Task-4      | ALB Ingress for access from the internet                | :white_check_mark: |                |
-| Task-5      | Prometheus Grafana integration for monitoring           | :x:                |                |
+| Task-5      | Prometheus Grafana integration for monitoring           | :white_check_mark: |                |
 | Task-6      | HPA (Horizontal Pod Autoscaling)                        | :white_check_mark: |                |
 | Task-7      | ConfigMap and Secrets [with AWS parameter store]        | :x:                |                |
 | Task-8      | Deploy DaemonSet                                        | :x:                |                |
@@ -379,15 +414,15 @@ $ terraform destroy --auto-approve
 
 ## References
 
-- [terraform-aws-eks-blueprints](https://aws-ia.github.io/terraform-aws-eks-blueprints/getting-started/)
-- [Karpenter getting started](https://karpenter.sh/docs/getting-started/getting-started-with-karpenter/)
-- [karpenter-blueprints](https://github.com/aws-samples/karpenter-blueprints/tree/main)
-- [terraform-aws-eks-blueprints-addons](https://github.com/aws-ia/terraform-aws-eks-blueprints-addons/blob/main/docs/addons/aws-load-balancer-controller.md)
-- [aws-load-balancer-controller](https://github.com/kubernetes-sigs/aws-load-balancer-controller/blob/main/helm/aws-load-balancer-controller/values.yaml)
-- [terraform-aws-eks-blueprints-addon readme](https://github.com/aws-ia/terraform-aws-eks-blueprints-addon#readme)
-- [deploy-prometheus](https://archive.eksworkshop.com/intermediate/240_monitoring/deploy-prometheus/)
-- https://navyadevops.hashnode.dev/setting-up-prometheus-and-grafana-on-amazon-eks-for-kubernetes-monitoring
-- https://github.com/aws-ia/terraform-aws-eks-blueprints-addons/blob/main/main.tf
-- [K8S HPA](https://medium.com/@amirhosseineidy/how-to-make-a-kubernetes-autoscaling-hpa-with-example-f2849c7bbd0b)
-- [horizontal-pod-autoscale-walkthrough](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale-walkthrough/)
-- [terraform-aws-eks-blueprints-teams](https://github.com/aws-ia/terraform-aws-eks-blueprints-teams)
+* [terraform-aws-eks-blueprints](https://aws-ia.github.io/terraform-aws-eks-blueprints/getting-started/)
+* [Karpenter getting started](https://karpenter.sh/docs/getting-started/getting-started-with-karpenter/)
+* [karpenter-blueprints](https://github.com/aws-samples/karpenter-blueprints/tree/main)
+* [terraform-aws-eks-blueprints-addons](https://github.com/aws-ia/terraform-aws-eks-blueprints-addons/blob/main/docs/addons/aws-load-balancer-controller.md)
+* [aws-load-balancer-controller](https://github.com/kubernetes-sigs/aws-load-balancer-controller/blob/main/helm/aws-load-balancer-controller/values.yaml)
+* [terraform-aws-eks-blueprints-addon readme](https://github.com/aws-ia/terraform-aws-eks-blueprints-addon#readme)
+* [deploy-prometheus](https://archive.eksworkshop.com/intermediate/240_monitoring/deploy-prometheus/)
+* https://navyadevops.hashnode.dev/setting-up-prometheus-and-grafana-on-amazon-eks-for-kubernetes-monitoring
+* https://github.com/aws-ia/terraform-aws-eks-blueprints-addons/blob/main/main.tf
+* [K8S HPA](https://medium.com/@amirhosseineidy/how-to-make-a-kubernetes-autoscaling-hpa-with-example-f2849c7bbd0b)
+* [horizontal-pod-autoscale-walkthrough](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale-walkthrough/)
+* [terraform-aws-eks-blueprints-teams](https://github.com/aws-ia/terraform-aws-eks-blueprints-teams)
