@@ -24,6 +24,8 @@ managed by Terraform.
   rules combined with documentation and scripts to provide easy to operate 
   end-to-end Kubernetes cluster monitoring with Prometheus using the Prometheus 
   Operator.
+* Amazon EKS Blueprints Teams Terraform module: [Terraform module](https://github.com/aws-ia/terraform-aws-eks-blueprints-teams)
+  which creates multi-tenancy resources on Amazon EKS.
 
 ## Steps
 
@@ -376,7 +378,7 @@ kubectl delete crd servicemonitors.monitoring.coreos.com
 kubectl delete crd thanosrulers.monitoring.coreos.com
 ```
 
-Also, remove the Ingress
+Also, remove the Ingress for Grafana Dashboard
 
 ```
 $ kubectl delete -f grafana.yml
