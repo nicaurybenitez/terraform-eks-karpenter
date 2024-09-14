@@ -7,7 +7,7 @@ provider "aws" {
 }
 
 provider "aws" {
-  region = var.region
+  region = var.deploy_region
   alias  = "ohio"
 }
 
@@ -82,9 +82,9 @@ module "eks" {
 
   eks_managed_node_groups = {
     managed_nodes = {
-      node_group_name = var.node_group_name
-      instance_types  = ["t3.medium", "t3a.medium"]
-
+      node_group_name       = var.node_group_name
+      instance_types        = var.eks_managed_nodes_instance_types
+      capacity_type         = var.eks_managed_nodes_capacity_type
       create_security_group = false
 
       subnet_ids   = module.vpc.private_subnets
@@ -115,7 +115,7 @@ module "ebs_csi_driver_irsa" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
   version = "5.44.0"
 
-  role_name = "ebs-csi-controller-sa"
+  role_name = "${module.eks.cluster_name}-ebs-csi-controller-sa"
 
   attach_ebs_csi_policy = true
 
@@ -154,7 +154,7 @@ module "eks_blueprints_addons" {
       },
       {
         name  = "image.tag"
-        value = "v2.8.2"
+        value = var.aws_load_balancer_controller_image_tag
       },
       {
         name  = "serviceAccount.name"
@@ -193,9 +193,13 @@ module "eks_blueprints_addons" {
   # Enable Karpenter for node autoscaling
   enable_karpenter = true
   karpenter = {
-    chart_version       = "1.0.1"
+    chart_version       = var.karpenter_chart_version
     repository_username = data.aws_ecrpublic_authorization_token.token.user_name
     repository_password = data.aws_ecrpublic_authorization_token.token.password
+    timeouts = {
+      create = "15m"
+      delete = "15m"
+    }
   }
   karpenter_enable_spot_termination          = true
   karpenter_enable_instance_profile_creation = true
@@ -265,11 +269,12 @@ module "aws-auth" {
   ]
 }
 
-###############################################################################
+##############################################################################################
 # Karpenter settings
-###############################################################################
+# https://github.com/aws-samples/karpenter-blueprints/blob/main/cluster/terraform/karpenter.tf
+##############################################################################################
 resource "kubectl_manifest" "karpenter_default_ec2_node_class" {
-  yaml_body = <<YAML
+  yaml_body = <<-YAML
 apiVersion: karpenter.k8s.aws/v1
 kind: EC2NodeClass
 metadata:
@@ -300,7 +305,7 @@ YAML
 }
 
 resource "kubectl_manifest" "karpenter_default_node_pool" {
-  yaml_body = <<YAML
+  yaml_body = <<-YAML
 apiVersion: karpenter.sh/v1
 kind: NodePool
 metadata:

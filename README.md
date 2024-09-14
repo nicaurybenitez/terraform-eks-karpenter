@@ -123,6 +123,10 @@ NAME            VERSION STATUS  CREATED                 VPC                     
 eks-cluster     1.30    ACTIVE  2024-09-10T14:19:44Z    vpc-0ae0071a560b7a269   subnet-022e5f6ce1670fe14,subnet-02e1475b6290fcba6,subnet-0c62df535bc954c1f                      EKS
 ```
 
+## Autoscaling
+
+### Karpenter
+
 You need to make sure you can interact with the cluster and that the `Karpenter`
 pods are running, i.e.:
 
@@ -227,20 +231,49 @@ m":{"name":"default-wgbwq"},"namespace":"","name":"default-wgbwq","reconcileID":
 
 ```
 
+### HPA (Horizontal Pod Autoscaling)
+
 Now, let's deploy [echoserver_full.yaml](./EKS/echoserver_full.yaml) and access
 it via the DNS we get from the AWS ALB. BTW, it will be an `Application Load
 Balancer`, as we have an `Ingress` between the `ALB` and the `Service`.
 
 ```
-$ kubectl apply -f echoserver_full.yaml 
+$ kubectl apply -f echoserver_full.yaml
 namespace/echoserver created
 deployment.apps/echoserver created
 service/echoserver created
+horizontalpodautoscaler.autoscaling/echoserver created
 ingress.networking.k8s.io/echoserver created
 $ kubectl get ing -n echoserver echoserver
 NAME         CLASS   HOSTS   ADDRESS                                                                   PORTS   AGE
-echoserver   alb     *       k8s-echoserv-echoserv-0c6afc926b-2140404222.us-east-2.elb.amazonaws.com   80      75m
+echoserver   alb     *       k8s-echoserv-echoserv-0c6afc926b-1788058414.us-east-2.elb.amazonaws.com   80      35s
 ```
+
+You can use stress testing tools like [**oha-docker**](https://github.com/ahmadalsajid/oha-docker)
+to put some load on the application, and check the HPA in action.
+
+```
+$ docker run --rm -it ahmadalsajid/oha-docker  -n 50000 -c 1500 http://k8s-echoserv-echoserv-0c6afc926b-1788058414.us-east-2.elb.amazonaws.com
+```
+
+Some commands that you can use to watch what happens with the deployment,
+autoscaling, and so on
+
+```
+$ kubectl get all -n echoserver
+$ kubectl get hpa echoserver -n echoserver
+$ kubectl get hpa echoserver -n echoserver --watch
+$ kubectl describe hpa echoserver -n echoserver
+$ kubectl get deployment echoserver -n echoserver
+$ kubectl edit horizontalpodautoscaler.autoscaling/echoserver -n echoserver
+```
+
+## Create IAM users for granting access to EKS
+
+If you want to create IAM users and assign them administrator access or some
+development access, go to the [iam.tf](./infra/iam.tf) file, uncomment it,
+adjust the team users/settings according to your needs, and then apply the
+changes with terraform.
 
 ## Monitoring with Prometheus & Grafana 
 
@@ -317,6 +350,8 @@ https://prometheus.io/
 **Always delete the AWS resources to save money after you are done.**
 
 ```
+# delete deployment, service, ingress or so if deployed, i.e
+$ kubectl delete -f echoserver_full.yaml
 $ kubectl delete --all nodeclaim
 $ kubectl delete --all nodepool
 $ kubectl delete --all ec2nodeclass
@@ -333,11 +368,11 @@ $ terraform destroy --auto-approve
 | Task-3      | Deploy Stateless application                            | :white_check_mark: |                |
 | Task-4      | ALB Ingress for access from the internet                | :white_check_mark: |                |
 | Task-5      | Prometheus Grafana integration for monitoring           | :x:                |                |
-| Task-6      | ConfigMap and Secrets                                   | :x:                |                |
+| Task-6      | HPA (Horizontal Pod Autoscaling)                        | :white_check_mark: |                |
 | Task-7      | ConfigMap and Secrets [with AWS parameter store]        | :x:                |                |
 | Task-8      | Deploy DaemonSet                                        | :x:                |                |
 | Task-9      | Deploy Stateful Application                             | :x:                |                |
-| Task-10     | Create Admin and Developer accounts for granular access | :x:                |                |
+| Task-10     | Create Admin and Developer accounts for granular access | :white_check_mark: |                |
 | Task-11     | To be amended in the future                             | :x:                |                |
 
 ## References
@@ -351,3 +386,6 @@ $ terraform destroy --auto-approve
 - [deploy-prometheus](https://archive.eksworkshop.com/intermediate/240_monitoring/deploy-prometheus/)
 - https://navyadevops.hashnode.dev/setting-up-prometheus-and-grafana-on-amazon-eks-for-kubernetes-monitoring
 - https://github.com/aws-ia/terraform-aws-eks-blueprints-addons/blob/main/main.tf
+- [K8S HPA](https://medium.com/@amirhosseineidy/how-to-make-a-kubernetes-autoscaling-hpa-with-example-f2849c7bbd0b)
+- [horizontal-pod-autoscale-walkthrough](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale-walkthrough/)
+- [terraform-aws-eks-blueprints-teams](https://github.com/aws-ia/terraform-aws-eks-blueprints-teams)
