@@ -251,12 +251,14 @@ echoserver   alb     *       k8s-echoserv-echoserv-0c6afc926b-1788058414.us-east
 
 You can use stress testing tools like [**oha-docker**](https://github.com/ahmadalsajid/oha-docker)
 to put some load on the application, and check the HPA in action.
+
 ```
 $ docker run --rm -it ahmadalsajid/oha-docker  -n 50000 -c 1500 http://k8s-echoserv-echoserv-0c6afc926b-1788058414.us-east-2.elb.amazonaws.com
 ```
 
-Some commands that you can use to watch what happens with the deployment, 
+Some commands that you can use to watch what happens with the deployment,
 autoscaling, and so on
+
 ```
 $ kubectl get all -n echoserver
 $ kubectl get hpa echoserver -n echoserver
@@ -265,6 +267,13 @@ $ kubectl describe hpa echoserver -n echoserver
 $ kubectl get deployment echoserver -n echoserver
 $ kubectl edit horizontalpodautoscaler.autoscaling/echoserver -n echoserver
 ```
+
+## Create IAM users for granting access to EKS
+
+If you want to create IAM users and assign them administrator access or some
+development access, go to the [iam.tf](./infra/iam.tf) file, uncomment it,
+adjust the team users/settings according to your needs, and then apply the
+changes with terraform.
 
 **Always delete the AWS resources to save money after you are done.**
 
@@ -277,13 +286,6 @@ $ kubectl delete --all ec2nodeclass
 $ kubectl config  delete-cluster arn:aws:eks:<region>:<account_id>:cluster/<cluster_name>
 $ terraform destroy --auto-approve
 ```
-
-## Create IAM users for granting access to EKS
-
-working on [](./infra/iam.tf), once done, remove `tf` and associated files from
-[EKS](./EKS) directory. Also, update this readme
-
-
 
 ## Tasks
 
@@ -310,4 +312,4 @@ working on [](./infra/iam.tf), once done, remove `tf` and associated files from
 - [aws-load-balancer-controller](https://github.com/kubernetes-sigs/aws-load-balancer-controller/blob/main/helm/aws-load-balancer-controller/values.yaml)
 - [K8S HPA](https://medium.com/@amirhosseineidy/how-to-make-a-kubernetes-autoscaling-hpa-with-example-f2849c7bbd0b)
 - [horizontal-pod-autoscale-walkthrough](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale-walkthrough/)
-- https://github.com/aws-ia/terraform-aws-eks-blueprints-teams
+- [terraform-aws-eks-blueprints-teams](https://github.com/aws-ia/terraform-aws-eks-blueprints-teams)
