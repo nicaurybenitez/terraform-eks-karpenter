@@ -304,7 +304,7 @@ changes with terraform.
 ## Monitoring with Prometheus & Grafana 
 
 We will be using Prometheus and Grafana for setting up the monitoring. to do
-so, we will enable [ `kube-prometheus-stack` ](https://github.com/aws-ia/terraform-aws-eks-blueprints-addons/blob/main/docs/addons/kube-prometheus-stack.md)
+so, we will enable [`kube-prometheus-stack`](https://github.com/aws-ia/terraform-aws-eks-blueprints-addons/blob/main/docs/addons/kube-prometheus-stack.md)
 in our managed addons in the [eks_cluster.tf](./infra/eks_cluster.tf) file, 
 something like
 
@@ -344,7 +344,6 @@ $ kubectl get secret -n monitoring monitoring-grafana -o jsonpath="{.data.admin-
 ```
 
 After that, you can visit the web address provided by the ingress, use `admin`
-
 as the username, and hotly retrieved password to access Grafana. There, you 
 will see some prebuilt dashboards. Also, you can create your own or get by 
 ID(s) from [Grafana Labs](https://grafana.com/grafana/dashboards/?search=kubernetes)
