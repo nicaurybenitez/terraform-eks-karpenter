@@ -208,7 +208,6 @@ module "eks_blueprints_addons" {
   # Enable Prometheus and Grafana, not working properly
   enable_kube_prometheus_stack = true
   kube_prometheus_stack = {
-    name          = "monitoring"
     chart         = "kube-prometheus-stack"
     chart_version = var.kube_prometheus_stack_chart_version
     repository    = "https://prometheus-community.github.io/helm-charts"

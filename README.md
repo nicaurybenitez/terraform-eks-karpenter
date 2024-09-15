@@ -361,7 +361,7 @@ prometheus   alb     *       k8s-monitori-promethe-f7484f4f25-423861633.us-east-
 
 ## Cleanup 
 
-If you are using the `kube-prometheus-stack` , CRDs created by this chart are 
+If you are using the `kube-prometheus-stack`, CRDs created by this chart are 
 not removed by default and should be manually cleaned up:
 
 ```
@@ -421,9 +421,12 @@ the resources.
 * [terraform-aws-eks-blueprints-addons](https://github.com/aws-ia/terraform-aws-eks-blueprints-addons/blob/main/docs/addons/aws-load-balancer-controller.md)
 * [aws-load-balancer-controller](https://github.com/kubernetes-sigs/aws-load-balancer-controller/blob/main/helm/aws-load-balancer-controller/values.yaml)
 * [terraform-aws-eks-blueprints-addon readme](https://github.com/aws-ia/terraform-aws-eks-blueprints-addon#readme)
-* [deploy-prometheus](https://archive.eksworkshop.com/intermediate/240_monitoring/deploy-prometheus/)
-* https://navyadevops.hashnode.dev/setting-up-prometheus-and-grafana-on-amazon-eks-for-kubernetes-monitoring
 * https://github.com/aws-ia/terraform-aws-eks-blueprints-addons/blob/main/main.tf
 * [K8S HPA](https://medium.com/@amirhosseineidy/how-to-make-a-kubernetes-autoscaling-hpa-with-example-f2849c7bbd0b)
 * [horizontal-pod-autoscale-walkthrough](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale-walkthrough/)
 * [terraform-aws-eks-blueprints-teams](https://github.com/aws-ia/terraform-aws-eks-blueprints-teams)
+* [multiple-ingress](https://www.eksworkshop.com/docs/fundamentals/exposing/ingress/multiple-ingress)
+* [aws-eks-best-practices](https://aws.github.io/aws-eks-best-practices/)
+* [hardeneks](https://github.com/aws-samples/hardeneks)
+* https://github.com/helm/helm/issues/11513
+* https://github.com/prometheus-community/helm-charts/issues/436
