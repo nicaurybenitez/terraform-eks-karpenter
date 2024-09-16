@@ -156,8 +156,7 @@ eks-cluster     1.30    ACTIVE  2024-09-10T14:19:44Z    vpc-0ae0071a560b7a269   
 
 ### Karpenter
 
-You need to make sure you can interact with the cluster and that the `Karpenter`
-
+You need to make sure you can interact with the cluster and the `Karpenter`
 pods are running, i.e.:
 
 ```
@@ -265,7 +264,7 @@ m":{"name":"default-wgbwq"},"namespace":"","name":"default-wgbwq","reconcileID":
 
 Now, let's deploy [echoserver_full.yml](./EKS/echoserver_full.yml) and access
 it via the DNS we get from the AWS ALB. BTW, it will be an `Application Load
-Balancer `, as we have an ` Ingress ` between the ` ALB ` and the ` Service`.
+Balancer`, as we have an `Ingress` between the `ALB` and the `Service`.
 
 ```
 $ kubectl apply -f echoserver_full.yml
@@ -397,6 +396,15 @@ time="2024-09-16T01:17:29Z" level=info msg="Starting Controller to watch resourc
 time="2024-09-16T01:17:29Z" level=info msg="created controller for: secrets"
 time="2024-09-16T01:17:29Z" level=info msg="Starting Controller to watch resource type: secrets"
 time="2024-09-16T01:18:56Z" level=info msg="Changes detected in 'database-secret' of type 'SECRET' in namespace 'envechoserver'; updated 'envechoserver' of type 'Deployment' in namespace 'envechoserver'"
+```
+
+Some useful commands would be
+
+```
+$ kubectl -n envechoserver get externalsecret
+$ kubectl -n envechoserver describe externalsecret <external_secret_name>
+$ kubectl -n envechoserver get secrets
+$ kubectl -n envechoserver describe secret <secret_name>
 ```
 
 ## Create IAM users for granting access to EKS
