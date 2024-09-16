@@ -4,8 +4,9 @@
 # clean up the AWS resources, run the below commands to inspect which resources
 # are left and the dependencies, then remove them in order to clean up AWS.
 # set the VPC ID you want to clean up in the next line
-vpc=""
-aws elbv2 describe-load-balancers
+vpc="vpc-0fa47df47a98793fe"
+#monkey, needs to be removed
+#aws elbv2 describe-load-balancers
 #aws elbv2 delete-load-balancer <ALB_ARN_from_above_command>
 aws ec2 describe-internet-gateways --filters "Name=attachment.vpc-id,Values=${vpc}" | grep InternetGatewayId
 aws ec2 describe-subnets --filters "Name=vpc-id,Values=${vpc}" | grep SubnetId

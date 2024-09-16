@@ -1,30 +1,34 @@
 # terraform-eks-karpenter
 
-Step-by-step guide to set and use production-ready AWS EKS with Addons, 
+Step-by-step guide to set and use production-ready AWS EKS with Addons,
 managed by Terraform.
 
 ## Addons
 
-* AWS Load Balancer Controller: [AWS Load Balancer Controller](https://kubernetes-sigs.github.io/aws-load-balancer-controller/) 
-  is a controller to help manage Elastic Load Balancers for a Kubernetes 
+* AWS Load Balancer
+  Controller: [AWS Load Balancer Controller](https://kubernetes-sigs.github.io/aws-load-balancer-controller/)
+  is a controller to help manage Elastic Load Balancers for a Kubernetes
   cluster. This Add-on deploys this controller in an Amazon EKS Cluster.
-* AWS for Fluent Bit: AWS provides a [Fluent Bit](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Container-Insights-setup-logs-FluentBit.html) 
-  image with plugins for both CloudWatch Logs and Kinesis Data Firehose. We 
-  recommend using Fluent Bit as your log router because it has a lower resource 
+* AWS for Fluent Bit: AWS provides
+  a [Fluent Bit](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Container-Insights-setup-logs-FluentBit.html)
+  image with plugins for both CloudWatch Logs and Kinesis Data Firehose. We
+  recommend using Fluent Bit as your log router because it has a lower resource
   utilization rate than Fluentd.
-* Metrics Server: [Metrics Server](https://github.com/kubernetes-sigs/metrics-server) 
-  is a scalable, efficient source of container resource metrics for Kubernetes 
+* Metrics Server: [Metrics Server](https://github.com/kubernetes-sigs/metrics-server)
+  is a scalable, efficient source of container resource metrics for Kubernetes
   built-in autoscaling pipelines.
-* Karpenter: [Karpenter](https://karpenter.sh/) automatically provisions new 
-  nodes in response to unschedulable pods. Karpenter does this by observing 
-  events within the Kubernetes cluster, and then sending commands to the 
+* Karpenter: [Karpenter](https://karpenter.sh/) automatically provisions new
+  nodes in response to unschedulable pods. Karpenter does this by observing
+  events within the Kubernetes cluster, and then sending commands to the
   underlying cloud provider.
-* Kube Prometheus Stack: [Kube Prometheus Stack](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack) 
-  is a collection of Kubernetes manifests, Grafana dashboards, and Prometheus 
-  rules combined with documentation and scripts to provide easy to operate 
-  end-to-end Kubernetes cluster monitoring with Prometheus using the Prometheus 
+* Kube Prometheus
+  Stack: [Kube Prometheus Stack](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack)
+  is a collection of Kubernetes manifests, Grafana dashboards, and Prometheus
+  rules combined with documentation and scripts to provide easy to operate
+  end-to-end Kubernetes cluster monitoring with Prometheus using the Prometheus
   Operator.
-* Amazon EKS Blueprints Teams Terraform module: [Terraform module](https://github.com/aws-ia/terraform-aws-eks-blueprints-teams)
+* Amazon EKS Blueprints Teams Terraform
+  module: [Terraform module](https://github.com/aws-ia/terraform-aws-eks-blueprints-teams)
   which creates multi-tenancy resources on Amazon EKS.
 
 ## Steps
@@ -205,7 +209,7 @@ ip-10-0-101-90.us-east-2.compute.internal   Ready    <none>   48m   v1.30.2-eks-
 ```
 
 We want to see `Karpenter` in action, right? To achieve that, increase the
-replica from `30` to `150` , and apply the change. Wait for a couple of minutes, 
+replica from `30` to `150` , and apply the change. Wait for a couple of minutes,
 and check for the nodes again.
 
 ```
@@ -282,7 +286,7 @@ to put some load on the application, and check the HPA in action.
 $ docker run --rm -it ahmadalsajid/oha-docker  -n 50000 -c 1500 http://k8s-echoserv-echoserv-0c6afc926b-1788058414.us-east-2.elb.amazonaws.com
 ```
 
-Some commands that you can use to watch what happens with the deployment, 
+Some commands that you can use to watch what happens with the deployment,
 autoscaling, and so on
 
 ```
@@ -294,18 +298,12 @@ $ kubectl get deployment echoserver -n echoserver
 $ kubectl edit horizontalpodautoscaler.autoscaling/echoserver -n echoserver
 ```
 
-## Create IAM users for granting access to EKS
-
-If you want to create IAM users and assign them administrator access or some
-development access, go to the [iam.tf](./infra/iam.tf) file, uncomment it, 
-adjust the team users/settings according to your needs, and then apply the
-changes with terraform.
-
-## Monitoring with Prometheus & Grafana 
+## Monitoring with Prometheus & Grafana
 
 We will be using Prometheus and Grafana for setting up the monitoring. to do
-so, we will enable [`kube-prometheus-stack`](https://github.com/aws-ia/terraform-aws-eks-blueprints-addons/blob/main/docs/addons/kube-prometheus-stack.md)
-in our managed addons in the [eks_cluster.tf](./infra/eks_cluster.tf) file, 
+so, we will
+enable [`kube-prometheus-stack`](https://github.com/aws-ia/terraform-aws-eks-blueprints-addons/blob/main/docs/addons/kube-prometheus-stack.md)
+in our managed addons in the [eks_cluster.tf](./infra/eks_cluster.tf) file,
 something like
 
 ```
@@ -328,7 +326,7 @@ Once the deployment is done, we can list everything from the namespace with
 $ kubectl get all -n monitoring
 ```
 
-You can see, Grafana is running as a NodePort service, we can expose it with 
+You can see, Grafana is running as a NodePort service, we can expose it with
 AWS ALB to the world. [grafana.yml](./infra/grafana.yml) contains the necessary
 configurations to create the ingress. You can get the ALB URL by the command
 
@@ -336,7 +334,7 @@ configurations to create the ingress. You can get the ALB URL by the command
 $ kubectl get ing -n monitoring
 ```
 
-Also, you'll need to retrieve the Grafana admin password for the first 
+Also, you'll need to retrieve the Grafana admin password for the first
 time using the `kubectl` command, i.e.
 
 ```
@@ -344,11 +342,11 @@ $ kubectl get secret -n monitoring monitoring-grafana -o jsonpath="{.data.admin-
 ```
 
 After that, you can visit the web address provided by the ingress, use `admin`
-as the username, and hotly retrieved password to access Grafana. There, you 
-will see some prebuilt dashboards. Also, you can create your own or get by 
+as the username, and hotly retrieved password to access Grafana. There, you
+will see some prebuilt dashboards. Also, you can create your own or get by
 ID(s) from [Grafana Labs](https://grafana.com/grafana/dashboards/?search=kubernetes)
 
-If you want to access the `Prometheus` also, use this 
+If you want to access the `Prometheus` also, use this
 [prometheus.yml](./infra/prometheus.yml) file to create the Ingress, i.e.
 
 ```
@@ -359,9 +357,58 @@ grafana      alb     *       k8s-monitori-grafana-0d481f4284-1538150578.us-east-
 prometheus   alb     *       k8s-monitori-promethe-f7484f4f25-423861633.us-east-2.elb.amazonaws.com   80      25m
 ```
 
-## Cleanup 
+## ConfigMap and Secrets [with AWS parameter store]
 
-If you are using the `kube-prometheus-stack`, CRDs created by this chart are 
+Set `enable_external_secrets = true` in `module "eks_blueprints_addons"` from
+[eks_cluster.tf](./infra/eks_cluster.tf) to use external secrets. Also, a
+kubectl manifest will be executed to create `ClusterSecretStore` which will
+connect to AWS Parameter Store to get the secrets from there. As the secrets
+are passed to the deployments as env variables, we used `helm_releases` to
+install [Reloader](https://github.com/stakater/Reloader) so that when a secret
+is updated in Parameter Store, the pods/Deployments/StatefulSets are recreated
+to reflect the changes in the environment variables. Details example can be
+found at [env-echoserver.yml](./EKS/env-echoserver.yml) file, where the
+`ExternalSecret` sync the secrets from AWS and sends to pods via environment
+variable. Fist, deploy it with
+
+```
+$ kubectl apply -f env-echoserver.yml        
+namespace/envechoserver created
+externalsecret.external-secrets.io/envechoserver-secrets created
+deployment.apps/envechoserver created
+service/envechoserver created
+ingress.networking.k8s.io/envechoserver created 
+```
+
+After a couple of minutes, check the ALB URL and carefully look for the
+environment variables that is passed the pod, i.e. `db-admin`, `db-password`,
+`another-db-admin`, & `another-db-password`. After that, change the value(s)
+from AWS Parameter Store, and after some time, visit the URL again, you will
+see the changes reflected in the response. Also, check the `Reloader` logs
+to get a better understanding.
+
+```
+$ kubectl logs stakater-reloader-reloader-66bcf4fc6-95jd5   
+time="2024-09-16T01:17:29Z" level=info msg="Environment: Kubernetes"
+time="2024-09-16T01:17:29Z" level=info msg="Starting Reloader"
+time="2024-09-16T01:17:29Z" level=warning msg="KUBERNETES_NAMESPACE is unset, will detect changes in all namespaces."
+time="2024-09-16T01:17:29Z" level=info msg="created controller for: configMaps"
+time="2024-09-16T01:17:29Z" level=info msg="Starting Controller to watch resource type: configMaps"
+time="2024-09-16T01:17:29Z" level=info msg="created controller for: secrets"
+time="2024-09-16T01:17:29Z" level=info msg="Starting Controller to watch resource type: secrets"
+time="2024-09-16T01:18:56Z" level=info msg="Changes detected in 'database-secret' of type 'SECRET' in namespace 'envechoserver'; updated 'envechoserver' of type 'Deployment' in namespace 'envechoserver'"
+```
+
+## Create IAM users for granting access to EKS
+
+If you want to create IAM users and assign them administrator access or some
+development access, go to the [iam.tf](./infra/iam.tf) file, uncomment it,
+adjust the team users/settings according to your needs, and then apply the
+changes with terraform.
+
+## Cleanup
+
+If you are using the `kube-prometheus-stack`, CRDs created by this chart are
 not removed by default and should be manually cleaned up:
 
 ```
@@ -383,7 +430,7 @@ Also, remove the Ingress for Grafana Dashboard
 $ kubectl delete -f grafana.yml
 ```
 
-**Always delete the AWS resources to save money after you are done.** 
+**Always delete the AWS resources to save money after you are done.**
 
 ```
 $ kubectl delete -f echoserver_full.yml
@@ -394,7 +441,7 @@ $ kubectl config  delete-cluster arn:aws:eks:<region>:<account_id>:cluster/<clus
 $ terraform destroy --auto-approve
 ```
 
-Alternately, you can use [tf_cleanup.sh](./infra/tf_cleanup.sh) to clean up
+Alternately, you can use [tf_cleanup.sh](infra/tf_cleanup.sh) to clean up
 the resources.
 
 ## Tasks
@@ -407,7 +454,7 @@ the resources.
 | Task-4      | ALB Ingress for access from the internet                | :white_check_mark: |                |
 | Task-5      | Prometheus Grafana integration for monitoring           | :white_check_mark: |                |
 | Task-6      | HPA (Horizontal Pod Autoscaling)                        | :white_check_mark: |                |
-| Task-7      | ConfigMap and Secrets [with AWS parameter store]        | :x:                |                |
+| Task-7      | ConfigMap and Secrets [with AWS parameter store]        | :white_check_mark: |                |
 | Task-8      | Deploy DaemonSet                                        | :x:                |                |
 | Task-9      | Deploy Stateful Application                             | :x:                |                |
 | Task-10     | Create Admin and Developer accounts for granular access | :white_check_mark: |                |
@@ -430,3 +477,9 @@ the resources.
 * [hardeneks](https://github.com/aws-samples/hardeneks)
 * https://github.com/helm/helm/issues/11513
 * https://github.com/prometheus-community/helm-charts/issues/436
+* https://github.com/aws-samples/eks-workshop-v2/blob/7038f7c46a204fb20c88f45d22bdb4456b4a0f63/manifests/.workshop/terraform/base.tf
+* https://external-secrets.io/latest/provider/aws-parameter-store/
+* https://external-secrets.io/v0.10.3/introduction/getting-started/
+* https://github.com/stakater/Reloader
+* https://github.com/aws-samples/eks-blueprints-add-ons/tree/main/add-ons
+* https://github.com/aws-ia/terraform-aws-eks-blueprints/blob/main/patterns/

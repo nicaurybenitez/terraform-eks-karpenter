@@ -6,6 +6,7 @@
 ├── data.tf
 ├── local.tf
 ├── variables.tf
+├── aws-ssm.tf
 ├── vpc.tf
 ├── eks_cluster.tf
 ├── iam.tf

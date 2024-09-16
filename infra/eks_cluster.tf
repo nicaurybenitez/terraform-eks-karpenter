@@ -78,6 +78,14 @@ module "eks" {
       source_cluster_security_group = true
       description                   = "Allow access from control plane to webhook port of AWS load balancer controller"
     }
+    ingress_cluster_all = {
+      description                   = "Cluster to node all ports/protocols"
+      protocol                      = "-1"
+      from_port                     = 0
+      to_port                       = 0
+      type                          = "ingress"
+      source_cluster_security_group = true
+    }
   }
 
   eks_managed_node_groups = {
@@ -170,7 +178,7 @@ module "eks_blueprints_addons" {
       }
     ]
   }
-
+  # will work on metric server later
   enable_metrics_server = true
 
   eks_addons = {
@@ -205,15 +213,33 @@ module "eks_blueprints_addons" {
     iam_role_use_name_prefix = false
   }
 
-  # Enable Prometheus and Grafana, not working properly
+  # Enable Prometheus & Grafana for monitoring, Need to make it statefulSet, i.e. add persistent volume
   enable_kube_prometheus_stack = true
   kube_prometheus_stack = {
     chart         = "kube-prometheus-stack"
     chart_version = var.kube_prometheus_stack_chart_version
     repository    = "https://prometheus-community.github.io/helm-charts"
     namespace     = "monitoring"
+    timeout       = 1200
+  }
 
-    timeout = 1200
+  # Enable external secrets to retrieve from AWS Parameter Store/ Secret Manager
+  enable_external_secrets = true
+  external_secrets = {
+    service_account_name = var.external_secrets_service_account_name
+    chart_version        = var.external_secrets_helm_chart_version
+    timeout              = 900
+  }
+  # additional helm installation for stakater/Reloader
+  helm_releases = {
+    stakater-reloader = {
+      description      = "A Helm chart for reloading resources on ConfigMap/Secrets change"
+      namespace        = "default"
+      create_namespace = false
+      chart            = "reloader"
+      chart_version    = "1.1.0"
+      repository       = "https://stakater.github.io/stakater-charts"
+    }
   }
 
   tags = local.tags
@@ -272,6 +298,31 @@ resource "kubectl_manifest" "karpenter_default_node_pool" {
     kubectl_manifest.karpenter_default_ec2_node_class,
   ]
 }
+
+resource "kubectl_manifest" "aws_param_cluster_secret_store" {
+  yaml_body = <<-YAML
+apiVersion: external-secrets.io/v1beta1
+kind: ClusterSecretStore
+metadata:
+  name: clusterwide-secrets
+spec:
+  provider:
+    aws:
+      service: ParameterStore
+      region: ${var.deploy_region}
+      auth:
+        jwt:
+          serviceAccountRef:
+            name: ${var.external_secrets_service_account_name}
+            namespace: ${module.eks_blueprints_addons.external_secrets.namespace}
+YAML
+
+  depends_on = [
+    module.eks,
+    module.eks_blueprints_addons.external_secrets
+  ]
+}
+
 ###############################################################################
 # Expose Grafana with ALB ingress
 ###############################################################################
