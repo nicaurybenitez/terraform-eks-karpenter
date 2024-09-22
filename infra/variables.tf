@@ -1,7 +1,7 @@
 variable "project_name" {
   description = "Project name that the EKS cluster will use"
   type        = string
-  default     = "eks-cluster"
+  default     = "ezzynetworks"
 }
 
 variable "eks_cluster_version" {
@@ -25,7 +25,7 @@ variable "vpc_cidr" {
 variable "deploy_region" {
   description = "The AWS region to deploy into (e.g. us-east-1)"
   type        = string
-  default     = "us-east-2"
+  default     = "eu-west-1"
 }
 
 variable "aws_alb_controller_name" {
