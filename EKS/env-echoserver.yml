@@ -114,6 +114,12 @@ metadata:
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
     alb.ingress.kubernetes.io/tags: Environment=dev,Team=test
+    alb.ingress.kubernetes.io/rate-limit: |
+      {
+        " BurstLimit": 100,
+        " RateLimit": 100,
+        " Unit": "count/min"
+      }
 spec:
   ingressClassName: alb
   rules:
